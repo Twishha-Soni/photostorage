@@ -1,3 +1,4 @@
+// security/JwtService.java
 package com.example.photostorage.security;
 
 import io.jsonwebtoken.Jwts;
@@ -25,7 +26,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
     }
