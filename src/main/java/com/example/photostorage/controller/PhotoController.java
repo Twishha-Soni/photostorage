@@ -1,8 +1,8 @@
-package com.example.photostorage.service;
+package com.example.photostorage.controller;
 
 import com.example.photostorage.dto.response.PhotoResponse;
+import com.example.photostorage.service.PhotoService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
