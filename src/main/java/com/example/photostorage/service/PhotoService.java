@@ -7,10 +7,16 @@ import com.example.photostorage.entity.User;
 import com.example.photostorage.exception.BadRequestException;
 import com.example.photostorage.exception.ResourceNotFoundException;
 import com.example.photostorage.repository.PhotoRepository;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -98,6 +104,33 @@ public class PhotoService {
         }
 
         photoRepository.delete(photo);
+    }
+
+    public ResponseEntity<Resource> download(Long photoId) {
+        User currentUser = userService.getCurrentUser();
+        Photo photo = findOwnedPhotoOrThrow(photoId, currentUser);
+
+        Path filePath = Paths.get(storageConfig.getUploadDir(), photo.getFilepath());
+
+        if(!Files.exists(filePath)) {
+            throw new ResourceNotFoundException("Photo file not found on disk for id: " + photoId);
+        }
+
+        try {
+            InputStream inputStream = Files.newInputStream(filePath);
+            InputStreamResource resource = new InputStreamResource(inputStream);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(photo.getContentType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + photo.getOriginalFilename() + "\"")
+                    .contentLength(photo.getFileSize())
+                    .body(resource);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file: " + e.getMessage(), e);
+        }
+
     }
 
     // ---- private helper functions ----

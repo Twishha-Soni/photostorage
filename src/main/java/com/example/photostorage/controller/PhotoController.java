@@ -2,6 +2,7 @@ package com.example.photostorage.controller;
 
 import com.example.photostorage.dto.response.PhotoResponse;
 import com.example.photostorage.service.PhotoService;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,5 +40,10 @@ public class PhotoController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         photoService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Resource> download(@PathVariable Long id) {
+        return photoService.download(id);
     }
 }
