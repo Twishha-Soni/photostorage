@@ -6,6 +6,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -45,5 +46,27 @@ public class PhotoController {
     @GetMapping("/{id}")
     public ResponseEntity<Resource> download(@PathVariable Long id) {
         return photoService.download(id);
+    }
+
+    @PutMapping("/{photoId}/album/{albumId}")
+    public ResponseEntity<PhotoResponse> assignToAlbum(
+            @PathVariable Long photoId,
+            @PathVariable Long albumId) {
+        return ResponseEntity.ok(photoService.assignToAlbum(photoId, albumId));
+    }
+
+    @DeleteMapping("/{photoId}/album")
+    public ResponseEntity<PhotoResponse> removeFromAlbum(@PathVariable Long photoId) {
+        return ResponseEntity.ok(photoService.removeFromAlbum(photoId));
+    }
+
+    @GetMapping("/album/{albumId}")
+    public ResponseEntity<List<PhotoResponse>> getByAlbum(@PathVariable Long albumId) {
+        return ResponseEntity.ok(photoService.getByAlbum(albumId));
+    }
+
+    @GetMapping("/unorganized")
+    public ResponseEntity<List<PhotoResponse>> getUnorganized() {
+        return ResponseEntity.ok(photoService.getUnorganized());
     }
 }

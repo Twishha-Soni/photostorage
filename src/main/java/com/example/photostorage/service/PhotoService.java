@@ -2,10 +2,12 @@ package com.example.photostorage.service;
 
 import com.example.photostorage.config.StorageConfig;
 import com.example.photostorage.dto.response.PhotoResponse;
+import com.example.photostorage.entity.Album;
 import com.example.photostorage.entity.Photo;
 import com.example.photostorage.entity.User;
 import com.example.photostorage.exception.BadRequestException;
 import com.example.photostorage.exception.ResourceNotFoundException;
+import com.example.photostorage.repository.AlbumRepository;
 import com.example.photostorage.repository.PhotoRepository;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -31,8 +33,10 @@ public class PhotoService {
     private final PhotoRepository photoRepository;
     private final UserService userService;
     private final StorageConfig storageConfig;
+    private final AlbumRepository albumRepository;
 
-    public PhotoService(PhotoRepository photoRepository, UserService userService, StorageConfig storageConfig) {
+    public PhotoService(AlbumRepository albumRepository, PhotoRepository photoRepository, UserService userService, StorageConfig storageConfig) {
+        this.albumRepository = albumRepository;
         this.photoRepository = photoRepository;
         this.userService = userService;
         this.storageConfig = storageConfig;
@@ -130,7 +134,49 @@ public class PhotoService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to read file: " + e.getMessage(), e);
         }
+    }
 
+    public PhotoResponse assignToAlbum(Long photoId, Long albumId) {
+        User currentUser = userService.getCurrentUser();
+
+        Photo photo = findOwnedPhotoOrThrow(photoId, currentUser);
+
+        Album album = albumRepository.findByAlbumIdAndUser(albumId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + albumId));
+
+        photo.setAlbum(album);
+        return toResponse(photoRepository.save(photo));
+    }
+
+    public PhotoResponse removeFromAlbum(Long photoId) {
+        User currentUser = userService.getCurrentUser();
+        Photo photo = findOwnedPhotoOrThrow(photoId, currentUser);
+
+        if(photo.getAlbum() == null) {
+            throw new BadRequestException("Photo is not assigned to any album");
+        }
+
+        photo.setAlbum(null);
+        return toResponse(photoRepository.save(photo));
+    }
+
+    public List<PhotoResponse> getByAlbum(Long albumId) {
+        User currentUser = userService.getCurrentUser();
+        Album album = albumRepository.findByAlbumIdAndUser(albumId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id: " + albumId));
+
+        return photoRepository.findByAlbumAndUser(album, currentUser)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<PhotoResponse> getUnorganized() {
+        User currentUser = userService.getCurrentUser();
+        return photoRepository.findByUserAndAlbumIsNull(currentUser)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     // ---- private helper functions ----
